@@ -1,17 +1,27 @@
 const fs = require("fs");
 const path = require("path");
 
-// Armazenar os tempos de modificação dos arquivos
+const diretorioEntrada = path.join(__dirname, "laravel", "storage", "app", "data", "in");
+const diretorioSaida = path.join(__dirname, "laravel", "app", "data", "out");
+
+// Verifica se o diretório de entrada existe, se não, cria
+if (!fs.existsSync(diretorioEntrada)) {
+  fs.mkdirSync(diretorioEntrada, { recursive: true });
+}
+
+// Verifica se o diretório de saída existe, se não, cria
+if (!fs.existsSync(diretorioSaida)) {
+  fs.mkdirSync(diretorioSaida, { recursive: true });
+}
+
 const temposModificacao = {};
 
-// Função para ler os arquivos do diretório de entrada
 function lerArquivosDiretorioEntrada(diretorioEntrada) {
   fs.readdir(diretorioEntrada, (err, arquivos) => {
     if (err) {
       console.error("Erro ao ler diretório de entrada:", err);
       return;
     }
-    // Filtrar apenas os arquivos .dat
     const arquivosDat = arquivos.filter((arquivo) => arquivo.endsWith(".dat"));
     arquivosDat.forEach((arquivo) => {
       const caminhoArquivo = path.join(diretorioEntrada, arquivo);
@@ -30,50 +40,39 @@ function lerArquivosDiretorioEntrada(diretorioEntrada) {
   });
 }
 
-// Função para processar um arquivo
-// ... (o código da função processarArquivo permanece o mesmo) ...
-
-// Diretório de entrada
-const diretorioEntrada = path.join(__dirname, "Unifametro-Decoder", "storage", "app", "data", "in");
-
-// Observar o diretório de entrada para alterações
 fs.watch(diretorioEntrada, (eventType, filename) => {
   if (eventType === "change" && filename.endsWith(".dat")) {
     lerArquivosDiretorioEntrada(diretorioEntrada);
   }
 });
 
-// Ler os arquivos do diretório de entrada inicialmente
 lerArquivosDiretorioEntrada(diretorioEntrada);
 
-// Função para ler os arquivos do diretório de entrada
 function lerArquivosDiretorioEntrada(diretorioEntrada) {
   fs.readdir(diretorioEntrada, (err, arquivos) => {
     if (err) {
       console.error("Erro ao ler diretório de entrada:", err);
       return;
     }
-    // Filtrar apenas os arquivos .dat
+
     const arquivosDat = arquivos.filter((arquivo) => arquivo.endsWith(".dat"));
     arquivosDat.forEach((arquivo) => processarArquivo(path.join(diretorioEntrada, arquivo)));
   });
 }
 
-// Função para processar um arquivo
 function processarArquivo(caminhoArquivo) {
   fs.readFile(caminhoArquivo, "utf8", (err, dados) => {
     if (err) {
       console.error("Erro ao ler arquivo:", err);
       return;
     }
-    // Dividir as linhas do arquivo
+
     const linhas = dados.split("\n");
     let numClientes = 0;
     let numVendedores = 0;
     let vendaMaisCara = { id: null, valor: -1 };
     const vendasPorVendedor = {};
 
-    // Processar cada linha do arquivo
     linhas.forEach((linha) => {
       const campos = linha.split("ç");
       const id = campos[0];
@@ -102,7 +101,6 @@ function processarArquivo(caminhoArquivo) {
       }
     });
 
-    // Identificar o pior vendedor
     const piorVendedor = Object.keys(vendasPorVendedor).reduce(
       (pior, vendedor) => {
         if (vendasPorVendedor[vendedor] < pior.valor) {
@@ -113,7 +111,6 @@ function processarArquivo(caminhoArquivo) {
       { id: null, valor: Infinity }
     );
 
-    // Escrever as métricas no arquivo de saída
     const metricas = {
       numClientes,
       numVendedores,
@@ -122,7 +119,7 @@ function processarArquivo(caminhoArquivo) {
     };
     const conteudoArquivoSaida = JSON.stringify(metricas);
     const nomeArquivoSaida = path.basename(caminhoArquivo) + ".done.dat";
-    const diretorioSaida = path.join(__dirname, "Unifametro-Decoder", "storage", "app", "data", "out");
+    const diretorioSaida = path.join(__dirname, "laravel", "app", "data", "out");
     fs.writeFile(path.join(diretorioSaida, nomeArquivoSaida), conteudoArquivoSaida, (err) => {
       if (err) {
         console.error("Erro ao escrever arquivo de saída:", err);
@@ -132,5 +129,4 @@ function processarArquivo(caminhoArquivo) {
     });
   });
 }
-// Diretório de entrada
 lerArquivosDiretorioEntrada(diretorioEntrada);
